@@ -93,10 +93,11 @@ dhUP:		;head max exceed
 	MOV DH,0
 	JMP redoBack
 
-chUP:		;cylinder num exceed
-	;finished load
-	MOV SI,successMsg
-	JMP outputLoop
+chUP:		;cylinder num exceed; finished load
+	;MOV		[0x0ff0],CH		; 载入完成，跳转到对应地址
+	JMP		0xc200
+	;MOV SI,successMsg
+	;JMP outputLoop
 		
 errorMsg:
 	DB 0x0a,0x0a
@@ -109,6 +110,7 @@ successMsg:
 	DB "load finished"
 	DB 0x0a
 	DB 0
+
 	
 	RESB	0x7dfe-$		; fill 0x00 from $ to 0x001fe
 	DB		0x55, 0xaa
