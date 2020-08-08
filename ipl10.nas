@@ -1,4 +1,3 @@
-
 	ORG 0x7c00
 	
 	JMP entry
@@ -63,9 +62,7 @@ redoBack:		;check sector, cylinder, head number
 error:
 	ADD SI,1
 	CMP SI,5
-	JE errorRun
-	JMP redoBack
-
+	JNE redoBack
 
 errorRun:		;set error msg
 	MOV SI,errorMsg
@@ -79,13 +76,14 @@ outputLoop:		;output String, need set SI as address of String
 	INT 0x10
 	JMP outputLoop
 	
+	
 fin:		;stop work
 	HLT
 	JMP fin
 
 clUP:		;sector max exceed
 	ADD DH,1
-	MOV CL,0
+	MOV CL,1
 	JMP redoBack
 	
 dhUP:		;head max exceed
@@ -94,10 +92,9 @@ dhUP:		;head max exceed
 	JMP redoBack
 
 chUP:		;cylinder num exceed; finished load
-	;MOV		[0x0ff0],CH		; 载入完成，跳转到对应地址
+	MOV CH,10
+	MOV		[0x0ff0],CH		; 载入完成，跳转到对应地址
 	JMP		0xc200
-	;MOV SI,successMsg
-	;JMP outputLoop
 		
 errorMsg:
 	DB 0x0a,0x0a
