@@ -1,3 +1,5 @@
+#include <stdio.h>
+
 #define COL8_000000		0
 #define COL8_FF0000		1
 #define COL8_00FF00		2
@@ -24,6 +26,133 @@ void io_out16(int port, int data);
 void io_out32(int port, int data);
 int io_load_eflags(void);
 void io_store_eflags(int eflags);
+void set_palette(int start,int end,unsigned char*rgb);
+void init_palette(void);
+void boxfill8(unsigned char *vram, int xsize, unsigned char c, int x0, int y0, int x1, int y1);
+void init_screen(char *vram,short scrnx,short scrny);
+void putblock8_8(char *vram,int vxsize,int pxsize,int pysize,int px0,int py0,char*buf,int bxsize);
+void init_mouse_cursor8(char*mouse, char bc);
+void putfonts8_asc(char *vram, int xsize,int x,int y,char c,unsigned char*s);
+void putfont8(char *vram,int xsize,int x,int y,char c,char*font);
+
+
+struct BOOTINFO{
+	char cyls,leds,vmode,reserve;
+	short scrnx,scrny;
+	char *vram;
+};
+
+void HariMain(void){
+	struct BOOTINFO *binfo=(struct BOOTINFO*)0x0ff0;
+	
+	char mcursor[256];
+	int mx,my;
+	mx=100;
+	my=100;
+
+	init_palette();
+	init_screen(binfo->vram,binfo->scrnx,binfo->scrny);
+
+	putfonts8_asc(binfo->vram,binfo->scrnx,8,8,COL8_FFFFFF,"ABC_123");
+	putfonts8_asc(binfo->vram,binfo->scrnx,31,31,COL8_000000,"Radish OS.");
+	putfonts8_asc(binfo->vram,binfo->scrnx,30,30,COL8_FFFFFF,"Radish OS.");
+
+	char* s;
+	sprintf(s,"scrnx = %d",binfo->scrnx);
+	putfonts8_asc(binfo->vram,binfo->scrnx,30,60,COL8_FFFFFF,s);
+
+	init_mouse_cursor8(mcursor,COL8_008484);
+	putblock8_8(binfo->vram,binfo->scrnx,16,16,mx,my,mcursor,16);
+
+	
+	
+	while(1)io_hlt();
+}
+
+void init_mouse_cursor8(char*mouse, char bc){
+	static char cursor[16][16]={
+		"*...............",
+		"**..............",
+		"*o*.............",
+		"*oo*............",
+		"*ooo*...........",
+		"*oooo*..........",
+		"*ooooo*.........",
+		"*oooooo*........",
+		"*ooooooo*.......",
+		"*oooooooo*......",
+		"*ooo*******.....",
+		"*oo*............",
+		"*o*.............",
+		"**..............",
+		"*...............",
+		"................"
+	};
+	int i;
+	for(i=0;i<16;i++){
+		int j;
+		for(j=0;j<16;j++){
+			int index=i*16+j;
+			if(cursor[i][j]=='*'){
+				mouse[index]=COL8_FFFFFF;
+			}else if(cursor[i][j]=='o'){
+				mouse[index]=COL8_000000;
+			}else mouse[index]=bc;
+		}
+	}
+}
+
+void putblock8_8(char *vram,int vxsize,int pxsize,int pysize,int px0,int py0,char*buf,int bxsize){
+	int x,y;
+	for(y=0;y<pysize;y++){
+		for(x=0;x<pxsize;x++){
+			vram[(py0+y)*vxsize+(px0+x)]=buf[y*bxsize+x];
+		}
+	}
+}
+
+void putfonts8_asc(char *vram, int xsize,int x,int y,char c,unsigned char*s){
+	extern char hankaku[4096];
+	while((*s)!=0){
+		putfont8(vram,xsize,x,y,c,hankaku+(*s++)*16);
+		x+=8;
+	}
+	return;
+}
+
+void putfont8(char *vram,int xsize,int x,int y,char c,char*font){
+	int i;
+	char *p, d;
+	for(i=0;i<16;i++){
+		p=vram+(y+i)*xsize+x;
+		d=font[i];
+		int j;
+		for(j=8;j>=0;j--){
+			if((d&(1<<j)))p[8-j]=c;
+		}
+	}
+	return;
+}
+
+void init_screen(char *vram,short xsize,short ysize){
+	boxfill8(vram, xsize, COL8_008484,  0,         0,          xsize -  1, ysize - 29);
+	boxfill8(vram, xsize, COL8_C6C6C6,  0,         ysize - 28, xsize -  1, ysize - 28);
+	boxfill8(vram, xsize, COL8_FFFFFF,  0,         ysize - 27, xsize -  1, ysize - 27);
+	boxfill8(vram, xsize, COL8_C6C6C6,  0,         ysize - 26, xsize -  1, ysize -  1);
+
+	boxfill8(vram, xsize, COL8_FFFFFF,  3,         ysize - 24, 59,         ysize - 24);
+	boxfill8(vram, xsize, COL8_FFFFFF,  2,         ysize - 24,  2,         ysize -  4);
+	boxfill8(vram, xsize, COL8_848484,  3,         ysize -  4, 59,         ysize -  4);
+	boxfill8(vram, xsize, COL8_848484, 59,         ysize - 23, 59,         ysize -  5);
+	boxfill8(vram, xsize, COL8_000000,  2,         ysize -  3, 59,         ysize -  3);
+	boxfill8(vram, xsize, COL8_000000, 60,         ysize - 24, 60,         ysize -  3);
+
+	boxfill8(vram, xsize, COL8_848484, xsize - 47, ysize - 24, xsize -  4, ysize - 24);
+	boxfill8(vram, xsize, COL8_848484, xsize - 47, ysize - 23, xsize - 47, ysize -  4);
+	boxfill8(vram, xsize, COL8_FFFFFF, xsize - 47, ysize -  3, xsize -  4, ysize -  3);
+	boxfill8(vram, xsize, COL8_FFFFFF, xsize -  3, ysize - 24, xsize -  3, ysize -  3);
+}
+
 
 void set_palette(int start,int end,unsigned char*rgb){
 	int i;
@@ -73,32 +202,3 @@ void boxfill8(unsigned char *vram, int xsize, unsigned char c, int x0, int y0, i
 	return;
 }
 
-void HariMain(void){
-	init_palette();
-	char*vram=0xa0000;
-	int xsize = 320;
-	int ysize = 200;
-
-	boxfill8(vram, xsize, COL8_008484,  0,         0,          xsize -  1, ysize - 29);
-	boxfill8(vram, xsize, COL8_C6C6C6,  0,         ysize - 28, xsize -  1, ysize - 28);
-	boxfill8(vram, xsize, COL8_FFFFFF,  0,         ysize - 27, xsize -  1, ysize - 27);
-	boxfill8(vram, xsize, COL8_C6C6C6,  0,         ysize - 26, xsize -  1, ysize -  1);
-
-	boxfill8(vram, xsize, COL8_FFFFFF,  3,         ysize - 24, 59,         ysize - 24);
-	boxfill8(vram, xsize, COL8_FFFFFF,  2,         ysize - 24,  2,         ysize -  4);
-	boxfill8(vram, xsize, COL8_848484,  3,         ysize -  4, 59,         ysize -  4);
-	boxfill8(vram, xsize, COL8_848484, 59,         ysize - 23, 59,         ysize -  5);
-	boxfill8(vram, xsize, COL8_000000,  2,         ysize -  3, 59,         ysize -  3);
-	boxfill8(vram, xsize, COL8_000000, 60,         ysize - 24, 60,         ysize -  3);
-
-	boxfill8(vram, xsize, COL8_848484, xsize - 47, ysize - 24, xsize -  4, ysize - 24);
-	boxfill8(vram, xsize, COL8_848484, xsize - 47, ysize - 23, xsize - 47, ysize -  4);
-	boxfill8(vram, xsize, COL8_FFFFFF, xsize - 47, ysize -  3, xsize -  4, ysize -  3);
-	boxfill8(vram, xsize, COL8_FFFFFF, xsize -  3, ysize - 24, xsize -  3, ysize -  3);
-	
-	boxfill8(vram,320,COL8_FF0000,20,20,120,120);
-	boxfill8(vram,320,COL8_00FF00,70,50,170,150);
-	boxfill8(vram,320,COL8_0000FF,120,80,220,180);
-	
-	while(1){io_hlt();}
-}

@@ -25,9 +25,9 @@ bootpack.obj : bootpack.nas Makefile
 naskfunc.obj : naskfunc.nas Makefile
 	$(TOOLSPATH)/nask.exe naskfunc.nas naskfunc.obj
 
-bootpack.bim : bootpack.obj naskfunc.obj Makefile
+bootpack.bim : bootpack.obj naskfunc.obj hankaku.obj Makefile
 	$(TOOLSPATH)/obj2bim.exe @$(TOOLSPATH)/haribote/haribote.rul out:bootpack.bim stack:3136k map:bootpack.map \
-		bootpack.obj naskfunc.obj
+		bootpack.obj naskfunc.obj hankaku.obj
 # 3MB+64KB=3135KB
 
 bootpack.hrb : bootpack.bim Makefile
@@ -41,6 +41,12 @@ haribote.img : ipl10.bin asmhead.sys Makefile
 		wbinimg src:ipl10.bin len:512 from:0 to:0 \
 		copy from:asmhead.sys to:@: \
 		imgout:haribote.img
+		
+hankaku.bin : hankaku.txt Makefile
+	$(TOOLSPATH)/makefont.exe hankaku.txt hankaku.bin
+
+hankaku.obj :hankaku.bin Makefile
+	$(TOOLSPATH)/bin2obj.exe hankaku.bin hankaku.obj _hankaku
 
 
 run : haribote.img
