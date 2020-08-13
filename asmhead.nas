@@ -13,17 +13,17 @@ SCRNX	EQU		0x0ff4			; 分辨率X
 SCRNY	EQU		0x0ff6			; 分辨率Y
 VRAM	EQU		0x0ff8			; 图像缓冲区的起始地址
 
-		ORG		0xc200			;  这个的程序要被装载的内存地址
+		ORG		0xc200			;  程序被装载的内存地址(这个地址是通过计算整个文件载入地址+此文件出现位置偏移得到的)
 
-; 画面モードを設定
+; 设定画面模式
 
 		MOV		AL,0x13			; VGA显卡，320x200x8bit
 		MOV		AH,0x00
 		INT		0x10
 		MOV		BYTE [VMODE],8	; 屏幕的模式（参考C语言的引用）
-		MOV		WORD [SCRNX],320
-		MOV		WORD [SCRNY],200
-		MOV		DWORD [VRAM],0x000a0000
+		MOV		WORD [SCRNX],320	;置入图像宽度
+		MOV		WORD [SCRNY],200	;置入图像高度
+		MOV		DWORD [VRAM],0xa0000 ;置入图像缓存区起始地址
 
 ; 通过BIOS获取指示灯状态
 
