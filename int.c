@@ -1,4 +1,10 @@
 #include "bootpack.h"
+#include <stdio.h>
+
+#define PORT_KEYDAT 0x0060
+
+
+struct KEYBUF keybuf;
 
 void init_pic(void){
     io_out8(PIC0_IMR,0xff);//禁止所有中断
@@ -16,13 +22,19 @@ void init_pic(void){
 
 	io_out8(PIC0_IMR,0xfb);//11111011 PIC1以外全部禁止
 	io_out8(PIC1_IMR,0xff);//11111111 禁止所有中断
+    return;
 }
 
 void inthandler21(int *esp){//来自PS/2键盘的中断
-    struct BOOTINFO *binfo=(struct BOOTINFO*)ADR_BOOTINFO;
-    boxfill8(binfo->vram,binfo->scrnx,COL8_000000,0,0,32*8-1,15);
-    putfonts8_asc(binfo->vram,binfo->scrnx,0,0,COL8_FFFFFF,"INT 21 (IRQ-1): PS/2 keyboard");
-    while(1)io_hlt();
+	io_out8(PIC0_OCW2, 0x61);	/* 通知PIC IRQ-01 已经受理完毕 */
+
+	unsigned char data = io_in8(PORT_KEYDAT);
+    if(keybuf.flag==0){
+        keybuf.flag=1;
+        keybuf.data=data;
+    }
+
+	return;
 }
 
 

@@ -14,6 +14,7 @@
 		GLOBAL	_io_load_eflags, _io_store_eflags
 		GLOBAL  _load_gdtr,_load_idtr
 		GLOBAL _asm_inthandler21,_asm_inthandler27,_asm_inthandler2c
+		EXTERN _inthandler21,_inthandler27,_inthandler2c
 
 ;以下是实际函数
 
@@ -38,7 +39,7 @@ _io_sti: ;void io_sti(void);
 	
 _io_stihlt: ;void io_stihlt(void);
 	STI
-	CLI
+	HLT
 	RET
 
 _io_in8:	; int io_in8(int port);
@@ -99,11 +100,10 @@ _load_idtr:		; void load_idtr(int limit, int addr);
 		LIDT	[ESP+6]
 		RET
 	
-EXTERN _inthandler21,_inthandler27,_inthandler2c
 
 
 _asm_inthandler21:
-	PUSH ESP
+	PUSH ES
 	PUSH DS
 	PUSHAD
 	MOV EAX,ESP
