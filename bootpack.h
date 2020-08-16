@@ -92,10 +92,19 @@ void set_gatedesc(struct GATE_DESCRIPTOR *gd, int offset, int selector, int ar);
 #define PIC1_ICW2		0x00a1
 #define PIC1_ICW3		0x00a1
 #define PIC1_ICW4		0x00a1
-struct KEYBUF{
-    unsigned char data,flag;
-};
+
+#define KEYBUF_SIZE		64
 void init_pic(void);
 void inthandler21(int *esp);
 void inthandler27(int *esp);
 void inthandler2c(int *esp);
+
+/* fifo8.c */
+struct FIFO8{
+    unsigned char* data;
+	unsigned char RT;
+	unsigned char past;
+};
+void fifo8_init(struct FIFO8 *fifo);
+void fifo8_put(struct FIFO8 *fifo,unsigned char data);
+int fifo8_get(struct FIFO8* fifo);

@@ -2,7 +2,7 @@
 #include "bootpack.h"
 
 
-extern struct KEYBUF keybuf;
+extern struct FIFO8 keybuf;
 
 void HariMain(void){
 	struct BOOTINFO *binfo=(struct BOOTINFO*)0x0ff0;
@@ -31,18 +31,31 @@ void HariMain(void){
 	
 	// while(1)io_hlt();
 
+	fifo8_init(&keybuf);
 	while(1){
 		io_cli();
-		if(keybuf.flag==0){
+		int ret=fifo8_get(&keybuf);
+		if(ret==-1){
 			io_stihlt();
-		}else{
-			int i=keybuf.data;
-			keybuf.flag=0;
-			io_sti();
-			sprintf(s,"%02X",i);
-			boxfill8(binfo->vram,binfo->scrnx,COL8_008484,0,16,16,31);
-			putfonts8_asc(binfo->vram,binfo->scrnx,0,16,COL8_FFFFFF,s);
+			continue;
 		}
+
+		io_sti();
+		sprintf(s,"%02X",ret);
+		boxfill8(binfo->vram,binfo->scrnx,COL8_008484,0,16,16,31);
+		putfonts8_asc(binfo->vram,binfo->scrnx,0,16,COL8_FFFFFF,s);
+		
+
+		// if(keybuf.flag==0){
+		// 	io_stihlt();
+		// }else{
+		// 	int i=keybuf.data;
+		// 	keybuf.flag=0;
+		// 	io_sti();
+		// 	sprintf(s,"%02X",i);
+		// 	boxfill8(binfo->vram,binfo->scrnx,COL8_008484,0,16,16,31);
+		// 	putfonts8_asc(binfo->vram,binfo->scrnx,0,16,COL8_FFFFFF,s);
+		// }
 	}
 	
 }
